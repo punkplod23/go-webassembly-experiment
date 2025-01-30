@@ -17,65 +17,35 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
+type HashFunction func(string) string
+
+var hashFunctions = map[string]HashFunction{
+	"MD2":        GetMD2Hash,
+	"MD4":        GetMD4Hash,
+	"MD5":        GetMD5Hash,
+	"base64":     GetBase64Hash,
+	"SHA1":       GetSHA1Hash,
+	"RIPEMD128":  GetRIPEMD128Hash,
+	"RIPEMD160":  GetRIPEMD160Hash,
+	"RIPEMD256":  GetRIPEMD256Hash,
+	"RIPEMD320":  GetRIPEMD320Hash,
+	"Whirlpool":  GetWhirlpoolHash,
+	"Tiger":      GetTigerHash,
+	"Tiger128":   GetTiger128Hash,
+	"Shabal192":  GetShabal192Hash,
+	"Shabal224":  GetShabal224Hash,
+	"Shabal256":  GetShabal256Hash,
+	"Shabal384":  GetShabal384Hash,
+	"Shabal512":  GetShabal512Hash,
+	"BLAKE2b512": GetBLAKE2b512Hash,
+	"BLAKE2s256": GetBLAKE2s256Hash,
+}
+
 func Read(hash string, guess string) (error, string) {
-
-	if GetMD2Hash(guess) == hash {
-		return nil, guess + " MD2"
-	}
-	if GetMD4Hash(guess) == hash {
-		return nil, guess + " MD4"
-	}
-	if GetMD5Hash(guess) == hash {
-		return nil, guess + " MD5"
-	}
-	if GetBase64Hash(guess) == hash {
-		return nil, guess + " base64"
-	}
-	if GetSHA1Hash(guess) == hash {
-		return nil, guess + " SHA1"
-	}
-	if GetRIPEMD128Hash(guess) == hash {
-		return nil, guess + " RIPEMD128"
-	}
-
-	if GetRIPEMD160Hash(guess) == hash {
-		return nil, guess + " RIPEMD160"
-	}
-	if GetRIPEMD256Hash(guess) == hash {
-		return nil, guess + " RIPEMD256"
-	}
-	if GetRIPEMD320Hash(guess) == hash {
-		return nil, guess + " RIPEMD320"
-	}
-	if GetWhirlpoolHash(guess) == hash {
-		return nil, guess + " Whirlpool"
-	}
-	if GetTigerHash(guess) == hash {
-		return nil, guess + " Tiger"
-	}
-	if GetTiger128Hash(guess) == hash {
-		return nil, guess + " Tiger128"
-	}
-	if GetShabal192Hash(guess) == hash {
-		return nil, guess + " Shabal192"
-	}
-	if GetShabal224Hash(guess) == hash {
-		return nil, guess + " Shabal224"
-	}
-	if GetShabal256Hash(guess) == hash {
-		return nil, guess + " Shabal256"
-	}
-	if GetShabal384Hash(guess) == hash {
-		return nil, guess + " Shabal384"
-	}
-	if GetShabal512Hash(guess) == hash {
-		return nil, guess + " Shabal512"
-	}
-	if GetBLAKE2b512Hash(guess) == hash {
-		return nil, guess + " BLAKE2b512"
-	}
-	if GetBLAKE2s256Hash(guess) == hash {
-		return nil, guess + " BLAKE2s256"
+	for name, function := range hashFunctions {
+		if function(guess) == hash {
+			return nil, guess + " " + name
+		}
 	}
 	fmt.Println("here")
 	return nil, ""

@@ -1,4 +1,4 @@
-module deserttrike
+module jtr
 
 go 1.23.1
 

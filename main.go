@@ -1,8 +1,8 @@
 package main
 
 import (
-	wordchecker "deserttrike/internal"
 	"fmt"
+	wordchecker "jtr/internal"
 	"unsafe"
 )
 
