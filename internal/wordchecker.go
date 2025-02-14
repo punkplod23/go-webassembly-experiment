@@ -5,7 +5,6 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
-	"fmt"
 
 	"github.com/cxmcc/tiger"
 	"github.com/deatil/go-hash/md2"
@@ -41,14 +40,13 @@ var hashFunctions = map[string]HashFunction{
 	"BLAKE2s256": GetBLAKE2s256Hash,
 }
 
-func Read(hash string, guess string) (error, string) {
+func Read(hash string, guess string) string {
 	for name, function := range hashFunctions {
 		if function(guess) == hash {
-			return nil, guess + " " + name
+			return guess + " " + name
 		}
 	}
-	fmt.Println("here")
-	return nil, ""
+	return ""
 }
 
 func GetMD5Hash(text string) string {

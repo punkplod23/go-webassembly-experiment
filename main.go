@@ -14,7 +14,7 @@ func decryptHashWasm(hashPtr *uint8, hashLen uint32, guessPtr *uint8, guessLen u
 	guessSlice := unsafe.Slice(guessPtr, guessLen)
 	guessStr := string(guessSlice)
 
-	_, res := wordchecker.Read(hashStr, guessStr)
+	res := wordchecker.Read(hashStr, guessStr)
 	var result string
 	if res == "" {
 		result = fmt.Sprintf("No match found for %s & %s", guessStr, hashStr)
