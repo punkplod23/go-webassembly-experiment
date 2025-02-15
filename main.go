@@ -25,6 +25,25 @@ func decryptHashWasm(hashPtr *uint8, hashLen uint32, guessPtr *uint8, guessLen u
 	return resultPtr
 }
 
+//export bruteForceWasm
+func bruteForceWasm(hashPtr *uint8, hashLen uint32, guessPtr *uint8, guessLen uint32, charLimit int) *uint8 {
+	hashSlice := unsafe.Slice(hashPtr, hashLen)
+	hashStr := string(hashSlice)
+
+	guessSlice := unsafe.Slice(guessPtr, guessLen)
+	guessStr := string(guessSlice)
+
+	res := wordchecker.BruteForce(hashStr, guessStr, 100000, charLimit)
+	var result string
+	if res == "" {
+		result = fmt.Sprintf("No match found for %s & %s", guessStr, hashStr)
+	} else {
+		result = fmt.Sprintf("Match found for %s", res)
+	}
+	resultPtr, _ := stringToPtr(result)
+	return resultPtr
+}
+
 // stringToPtr converts a Go string to a *uint8 and length
 func stringToPtr(s string) (*uint8, uint32) {
 	b := []byte(s)

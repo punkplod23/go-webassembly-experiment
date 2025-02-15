@@ -1,10 +1,8 @@
-package main
+package hashchecker
 
 import (
 	"fmt"
 	"strings"
-	"sync"
-	"time"
 )
 
 var (
@@ -25,78 +23,16 @@ var (
 		's': '$',
 		'l': '1',
 	}
+	hash = ""
 )
-
-func generateCandidates(length int, chars []rune, batchSize int, process func([]string)) {
-	candidates := make([]string, 0, batchSize)
-	var mu sync.Mutex
-	var wg sync.WaitGroup
-
-	batchChan := make(chan []string, 10)
-	done := make(chan struct{})
-
-	// Worker goroutines to process batches
-	for i := 0; i < 4; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for batch := range batchChan {
-				process(batch)
-			}
-		}()
-	}
-
-	var generate func(string, int)
-	generate = func(current string, remaining int) {
-		if remaining == 0 {
-			mu.Lock()
-
-			candidates = append(candidates, current)
-
-			if len(candidates) >= batchSize {
-				batch := make([]string, len(candidates))
-				copy(batch, candidates)
-				candidates = candidates[:0]
-				mu.Unlock()
-				batchChan <- batch
-			} else {
-				mu.Unlock()
-			}
-			return
-		}
-		for _, char := range chars {
-			generate(current+string(char), remaining-1)
-		}
-	}
-
-	generate("", length)
-
-	mu.Lock()
-	if len(candidates) > 0 {
-		batch := make([]string, len(candidates))
-		copy(batch, candidates)
-		candidates = candidates[:0]
-		mu.Unlock()
-		batchChan <- batch
-	} else {
-		mu.Unlock()
-	}
-
-	close(batchChan)
-	wg.Wait()
-	close(done)
-}
 
 func compareCandidate(candidate string, check string) bool {
 
-	if check == candidate {
-		fmt.Println("Found:", candidate)
+	candidateUppercase := strings.ToUpper(candidate)
+	if checkLogic(check, candidate) {
 		return true
 	}
-
-	candidateUppercase := strings.ToUpper(candidate)
-	if check == candidateUppercase {
-		fmt.Println("Found:", candidateUppercase)
+	if checkLogic(check, candidateUppercase) {
 		return true
 	}
 
@@ -118,12 +54,10 @@ func checkUppercase(candidate string, candidateUppercase string, check string) b
 	for i := 1; i <= len(candidate); i++ {
 		value := strings.ToUpper(candidate[:i]) + candidate[i:]
 		valueUppercase := strings.ToUpper(candidateUppercase[:i]) + candidateUppercase[i:]
-		if check == value {
-			fmt.Println("Found:", value)
+		if checkLogic(check, value) {
 			return true
 		}
-		if check == valueUppercase {
-			fmt.Println("Found:", valueUppercase)
+		if checkLogic(check, valueUppercase) {
 			return true
 		}
 		if checkSpecialChars(value, candidateUppercase, check) {
@@ -138,13 +72,11 @@ func checkSpecialChars(candidate string, candidateUppercase string, check string
 	for i := 0; i < len(candidate); i++ {
 		if special, ok := specialCharsSub[rune(candidate[i])]; ok {
 			value := candidate[:i] + string(special) + candidate[i+1:]
-			if check == value {
-				fmt.Println("Found:", value)
+			valueUppercase := candidateUppercase[:i] + string(special) + candidateUppercase[i+1:]
+			if checkLogic(check, value) {
 				return true
 			}
-			valueUppercase := candidateUppercase[:i] + string(special) + candidateUppercase[i+1:]
-			if check == valueUppercase {
-				fmt.Println("Found:", valueUppercase)
+			if checkLogic(check, valueUppercase) {
 				return true
 			}
 			if checkNumberSubstitution(value, candidateUppercase, check) {
@@ -160,12 +92,10 @@ func checkNumberSubstitution(candidate string, candidateUppercase string, check 
 		if candidate[i] >= '0' && candidate[i] <= '9' {
 			value := candidate[:i] + string(candidate[i]) + candidate[i+1:]
 			valueUppercase := candidateUppercase[:i] + string(candidateUppercase[i]) + candidateUppercase[i+1:]
-			if check == value {
-				fmt.Println("Found:", value)
+			if checkLogic(check, value) {
 				return true
 			}
-			if check == valueUppercase {
-				fmt.Println("Found:", valueUppercase)
+			if checkLogic(check, valueUppercase) {
 				return true
 			}
 		}
@@ -173,31 +103,52 @@ func checkNumberSubstitution(candidate string, candidateUppercase string, check 
 	return false
 }
 
-func checkFrequency(check string, chars []rune, option string, batchSize int) bool {
-	found := false
-	var mu sync.Mutex
+func checkFrequency(check string, chars []rune, charLen int) string {
+	candidates := generateCandidates(charLen, chars)
+	for _, candidate := range candidates {
+		if compareCandidate(candidate, check) {
+			fmt.Println("Found:", candidate)
+			return candidate
+		}
+	}
+	return ""
+}
 
-	processBatch := func(batch []string) {
-		for _, candidate := range batch {
-			if compareCandidate(candidate, check) {
-				mu.Lock()
-				found = true
-				mu.Unlock()
-				fmt.Println("Found:", candidate)
-				fmt.Println("Completed time:", time.Now())
-				return
-			}
+func generateCandidates(length int, chars []rune) []string {
+	result := []string{}
+
+	var generate func(string, int)
+	generate = func(current string, remaining int) {
+		if remaining == 0 {
+			result = append(result, current)
+			return
+		}
+		for _, char := range chars {
+			generate(current+string(char), remaining-1)
 		}
 	}
 
-	generateCandidates(len(check), chars, batchSize, processBatch)
-	return found
+	generate("", length)
+	return result
 }
 
-func main() {
-	fmt.Println("Current time:", time.Now())
-	check := "Pas3wo"
-	batchSize := 1000000
-	option := ""
-	checkFrequency(check, frequency, option, batchSize)
+func checkLogic(a string, b string) bool {
+
+	//original := b
+	hashStr := b
+
+	if hashFunc, exists := hashFunctions[hash]; exists {
+		hashStr = hashFunc(hashStr)
+	}
+
+	if a == hashStr {
+		return true
+	}
+
+	return false
+}
+
+func BruteForce(hashType string, check string, batchSize int, charLen int) string {
+	hash = hashType
+	return checkFrequency(check, frequency, charLen)
 }
